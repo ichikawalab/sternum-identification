@@ -319,11 +319,11 @@ Do not commit DICOM, NIfTI, subject metadata, features, rankings, local paths, o
 outputs. See `.gitignore` and `SECURITY.md`. Before release, inspect all staged files and
 repository history for protected information.
 
-## Citation and license
+## License and citation
 
-See `CITATION.cff`. Also cite TotalSegmentator/nnU-Net, PyRadiomics, ktch, LIDC-IDRI, and
-the [prior thoracic-vertebrae study](https://doi.org/10.1007/s10278-025-01571-x) where
-applicable.
+This code is released under the [MIT License](LICENSE). Third-party tools and datasets retain
+their own licenses and terms.
 
-Code is released under the MIT License. Third-party tools and datasets retain their own
-licenses and terms.
+If you use this repository, please cite [CITATION.cff](CITATION.cff) and, where applicable,
+TotalSegmentator/nnU-Net, PyRadiomics, ktch, LIDC-IDRI, and the
+[prior thoracic-vertebrae study](https://doi.org/10.1007/s10278-025-01571-x).

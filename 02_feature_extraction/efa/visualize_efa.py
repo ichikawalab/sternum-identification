@@ -199,8 +199,7 @@ def create_reconstruction(
         )
         for row, view in enumerate(VIEWS):
             reconstructed = [
-                core.reconstruct_contour(contours[view], harmonic)
-                for harmonic in harmonics
+                core.reconstruct_contour(contours[view], harmonic) for harmonic in harmonics
             ]
             row_contours = [contours[view], *reconstructed]
             common_limits = np.vstack(row_contours)
