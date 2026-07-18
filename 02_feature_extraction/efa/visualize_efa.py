@@ -28,7 +28,22 @@ from common.provenance import (  # noqa: E402
 
 VIEWS = ("cor", "sag", "axial")
 VIEW_LABELS = {"cor": "Coronal", "sag": "Sagittal", "axial": "Axial"}
+ANATOMICAL_LABELS = {
+    "cor": {"left": "R", "right": "L", "top": "S", "bottom": "I"},
+    "sag": {"left": "A", "right": "P", "top": "S", "bottom": "I"},
+    "axial": {"left": "R", "right": "L", "top": "A", "bottom": "P"},
+}
 FIGURE_SUFFIXES = {".png", ".tif", ".tiff"}
+PRIMARY_COLOR = "#2C7FB8"
+COMPARISON_COLOR = "#D95F0E"
+LINE_WIDTH = 1.6
+LABEL_FONT_SIZE = 9
+FIGURE_STYLE = {
+    "font.family": "Arial",
+    "font.size": 9,
+    "axes.titlesize": 10,
+    "axes.titleweight": "bold",
+}
 
 
 def contours_from_mask(mask_path: Path) -> dict[str, np.ndarray]:
@@ -62,12 +77,49 @@ def draw_contour(
     contour: np.ndarray,
     *,
     color: str,
-    label: str | None = None,
+    linestyle: str = "-",
 ) -> None:
     closed = np.vstack([contour, contour[0]])
-    axis.plot(closed[:, 0], closed[:, 1], color=color, linewidth=1.6, label=label)
+    axis.plot(
+        closed[:, 0],
+        closed[:, 1],
+        color=color,
+        linewidth=LINE_WIDTH,
+        linestyle=linestyle,
+    )
     axis.set_aspect("equal")
     axis.axis("off")
+
+
+def set_equal_limits(axis: plt.Axes, contour: np.ndarray, margin: float = 0.22) -> None:
+    """Use a square display region without distorting the contour."""
+    minimum = contour.min(axis=0)
+    maximum = contour.max(axis=0)
+    center = 0.5 * (minimum + maximum)
+    half_span = 0.5 * max(*(maximum - minimum), 1e-6) * (1.0 + margin)
+    axis.set_xlim(center[0] - half_span, center[0] + half_span)
+    axis.set_ylim(center[1] - half_span, center[1] + half_span)
+
+
+def add_anatomical_labels(axis: plt.Axes, view: str) -> None:
+    labels = ANATOMICAL_LABELS[view]
+    positions = {
+        "left": (0.02, 0.50, "left", "center"),
+        "right": (0.98, 0.50, "right", "center"),
+        "top": (0.50, 0.98, "center", "top"),
+        "bottom": (0.50, 0.02, "center", "bottom"),
+    }
+    for direction, (x, y, horizontal, vertical) in positions.items():
+        axis.text(
+            x,
+            y,
+            labels[direction],
+            transform=axis.transAxes,
+            ha=horizontal,
+            va=vertical,
+            fontsize=LABEL_FONT_SIZE,
+            fontweight="bold",
+        )
 
 
 def save_figure(figure: plt.Figure, output_path: Path) -> None:
@@ -111,11 +163,13 @@ def figure_manifest(
 
 def create_views(mask_path: Path, case_id: str, output_path: Path) -> None:
     contours = contours_from_mask(mask_path)
-    figure, axes = plt.subplots(1, 3, figsize=(8.0, 3.0))
-    for axis, view in zip(axes, VIEWS, strict=True):
-        draw_contour(axis, contours[view], color="#2C7FB8")
-        axis.set_title(VIEW_LABELS[view])
-    figure.suptitle(case_id)
+    with plt.rc_context(FIGURE_STYLE):
+        figure, axes = plt.subplots(1, 3, figsize=(9.6, 3.2), layout="constrained")
+        for axis, view in zip(axes, VIEWS, strict=True):
+            draw_contour(axis, contours[view], color=PRIMARY_COLOR)
+            set_equal_limits(axis, contours[view])
+            add_anatomical_labels(axis, view)
+            axis.set_title(VIEW_LABELS[view], pad=8)
     save_figure(figure, output_path)
     figure_manifest(
         figure_type="three_view_contours",
@@ -135,15 +189,37 @@ def create_reconstruction(
         raise ValueError("harmonics must be positive integers")
     contours = contours_from_mask(mask_path)
     columns = 1 + len(harmonics)
-    figure, axes = plt.subplots(3, columns, figsize=(2.2 * columns, 6.5), squeeze=False)
-    for row, view in enumerate(VIEWS):
-        draw_contour(axes[row, 0], contours[view], color="#222222")
-        axes[row, 0].set_title(f"{VIEW_LABELS[view]}\nOriginal")
-        for column, harmonic in enumerate(harmonics, start=1):
-            reconstructed = core.reconstruct_contour(contours[view], harmonic)
-            draw_contour(axes[row, column], reconstructed, color="#D95F0E")
-            axes[row, column].set_title(f"H{harmonic}")
-    figure.suptitle(case_id)
+    with plt.rc_context(FIGURE_STYLE):
+        figure, axes = plt.subplots(
+            3,
+            columns,
+            figsize=(2.2 * columns, 6.5),
+            squeeze=False,
+            layout="constrained",
+        )
+        for row, view in enumerate(VIEWS):
+            reconstructed = [
+                core.reconstruct_contour(contours[view], harmonic)
+                for harmonic in harmonics
+            ]
+            row_contours = [contours[view], *reconstructed]
+            common_limits = np.vstack(row_contours)
+            for column, contour in enumerate(row_contours):
+                draw_contour(axes[row, column], contour, color=PRIMARY_COLOR)
+                set_equal_limits(axes[row, column], common_limits, margin=0.18)
+                if row == 0:
+                    title = "Original" if column == 0 else f"H = {harmonics[column - 1]}"
+                    axes[row, column].set_title(title, pad=8)
+            axes[row, 0].text(
+                -0.12,
+                0.50,
+                VIEW_LABELS[view],
+                transform=axes[row, 0].transAxes,
+                ha="right",
+                va="center",
+                fontsize=LABEL_FONT_SIZE,
+                fontweight="bold",
+            )
     save_figure(figure, output_path)
     figure_manifest(
         figure_type="harmonic_reconstruction",
@@ -163,12 +239,19 @@ def create_matching_pair(
 ) -> None:
     query = contours_from_mask(query_mask_path)
     reference = contours_from_mask(reference_mask_path)
-    figure, axes = plt.subplots(1, 3, figsize=(8.0, 3.0))
-    for axis, view in zip(axes, VIEWS, strict=True):
-        draw_contour(axis, query[view], color="#2C7FB8", label=query_case_id)
-        draw_contour(axis, reference[view], color="#D95F0E", label=reference_case_id)
-        axis.set_title(VIEW_LABELS[view])
-    axes[0].legend(frameon=False, fontsize=8)
+    with plt.rc_context(FIGURE_STYLE):
+        figure, axes = plt.subplots(1, 3, figsize=(9.6, 3.2), layout="constrained")
+        for axis, view in zip(axes, VIEWS, strict=True):
+            draw_contour(axis, query[view], color=PRIMARY_COLOR)
+            draw_contour(
+                axis,
+                reference[view],
+                color=COMPARISON_COLOR,
+                linestyle="--",
+            )
+            set_equal_limits(axis, np.vstack([query[view], reference[view]]))
+            add_anatomical_labels(axis, view)
+            axis.set_title(VIEW_LABELS[view], pad=8)
     save_figure(figure, output_path)
     figure_manifest(
         figure_type="matching_pair_overlay",
