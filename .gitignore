@@ -1,0 +1,61 @@
+# Python and uv
+.venv/
+.uv-cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+__pycache__/
+*.py[cod]
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*~
+
+# Restricted inputs and generated analysis products
+data/
+local_data/
+outputs/
+_local_only/
+.docx_review/
+*.docx
+*.csv
+!examples/*.csv
+segmentation_config.json
+*manifest*.json
+
+# Medical images and common derived-data formats
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+*.nrrd
+*.mha
+*.mhd
+*.raw
+*.npz
+*.npy
+*.pkl
+*.pickle
+*.joblib
+*.parquet
+*.feather
+*.xlsx
+*.xls
+
+# Generated figures, logs, and model artifacts
+*.tif
+*.tiff
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.svg
+*.log
+*.ckpt
+*.pt
+*.pth
+*.onnx

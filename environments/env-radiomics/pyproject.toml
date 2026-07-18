@@ -1,0 +1,19 @@
+[project]
+name = "sternum-env-radiomics"
+version = "1.0.0"
+description = "Isolated environment for 3D PyRadiomics shape-feature extraction."
+requires-python = ">=3.9,<3.10"
+dependencies = [
+    "pyradiomics==3.1.0",
+    "SimpleITK>=2.3",
+    "numpy<2",
+    "pandas>=2.0",
+    "tqdm>=4.67",
+]
+
+# WHY A SEPARATE ENV:
+# pyradiomics 3.1.0 ships wheels only for cp37/cp38/cp39 and requires numpy<2,
+# whereas the root analysis environment needs ktch 0.9.0 (Python>=3.11, numpy>=2).
+# The two cannot coexist. This env is needed ONLY to (re)extract shape features
+# from segmentation masks. Run from the repository root:
+# uv run --project environments/env-radiomics python 02_feature_extraction/radiomics/extract_shape_features.py ...

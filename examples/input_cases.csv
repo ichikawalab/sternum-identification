@@ -1,0 +1,4 @@
+case_id,person_id,path,pre_0_post_1
+INST_PAIR_001_PRE,INST_PAIR_001,example_data/institution/subject_001/pre,0
+INST_PAIR_001_POST,INST_PAIR_001,example_data/institution/subject_001/post,1
+LIDC-IDRI-0001_S01,LIDC-IDRI-0001,example_data/lidc/LIDC-IDRI-0001/series_01,0

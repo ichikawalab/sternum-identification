@@ -1,0 +1,32 @@
+[project]
+name = "sternum-env-seg"
+version = "1.0.0"
+description = "DICOM conversion and TotalSegmentator sternum segmentation environment."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "totalsegmentator==2.12.0",
+    "torch==2.5.1+cu121",
+    "torchvision==0.20.1+cu121",
+    "nibabel>=5.3.3",
+    "numpy>=2.0",
+]
+
+# GPU build (CUDA 12.1). CPU also works but is slow; drop the +cu121 pins and the
+# index below to use CPU wheels. This environment is used only to generate masks
+# from DICOM and is isolated from the analysis environment.
+# Also requires the external `dcm2niix` executable on PATH (or pass --dcm2niix_exe).
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+torchvision = { index = "pytorch-cu121" }
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<9",
+    "ruff>=0.11,<0.12",
+]

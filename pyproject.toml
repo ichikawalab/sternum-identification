@@ -1,0 +1,49 @@
+[project]
+name = "sternum-identification"
+version = "1.0.0"
+description = "Multi-view EFA and radiomics pipeline for sternum CT identification"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Ichikawa Lab" }]
+requires-python = ">=3.11,<3.13"
+keywords = [
+    "computed tomography",
+    "elliptic Fourier analysis",
+    "medical imaging",
+    "radiomics",
+    "sternum",
+]
+dependencies = [
+    "ktch==0.9.0",
+    "matplotlib>=3.9,<4",
+    "nibabel>=5.2,<6",
+    "numpy>=2.0,<3",
+    "pandas>=3.0,<4",
+    "scikit-image>=0.24,<1",
+    "scikit-learn>=1.5,<2",
+    "scipy>=1.13,<2",
+    "statsmodels>=0.14,<1",
+]
+
+[project.urls]
+Homepage = "https://github.com/ichikawalab/sternum-identification"
+Repository = "https://github.com/ichikawalab/sternum-identification"
+Issues = "https://github.com/ichikawalab/sternum-identification/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<9",
+    "ruff>=0.12,<1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["05_statistics/out", "data", "local_data", "outputs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
