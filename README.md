@@ -45,8 +45,9 @@ uv sync --frozen --project environments/env-radiomics
 ```
 
 The segmentation lock uses CUDA 12.1 PyTorch wheels. CPU-only users must replace the
-CUDA-specific PyTorch pins and index in `environments/env-seg/pyproject.toml` and
-regenerate that lock file.
+CUDA-specific PyTorch pins and index in
+[`environments/env-seg/pyproject.toml`](environments/env-seg/pyproject.toml) and regenerate
+that lock file.
 
 ## Input CSV
 
@@ -67,15 +68,16 @@ LIDC-IDRI-0001_S01,LIDC-IDRI-0001,lidc/LIDC-IDRI-0001/series_01,0
 Each `path` must identify one series directory containing its DICOM files directly.
 
 LIDC cases are antemortem gallery cases and do not have genuine institutional matches.
-`roi_subset` is a CLI setting, not a CSV column. See `examples/input_cases.csv`.
+`roi_subset` is a CLI setting, not a CSV column. See
+[`examples/input_cases.csv`](examples/input_cases.csv).
 Absolute paths, path traversal, unsafe IDs, duplicate IDs, and duplicate resolved paths
 are rejected.
 
-This code locks the study cohort: 66 institutional people with one PRE and one POST scan,
-plus 1,014 LIDC reference scans.
+This release reproduces the study-specific cohort design: 66 institutional people with one
+PRE and one POST scan, plus 1,014 LIDC reference scans.
 
 Run all commands from the repository root. The examples below use PowerShell backticks;
-use `^` instead in Windows Command Prompt.
+use `^` in Windows Command Prompt or `\` in Bash.
 
 ## 1. Segmentation
 
@@ -182,7 +184,7 @@ Three locked cohorts are written:
 - `lidc_one_per_person`: primary eligibility with the first eligible LIDC scan per person
   in input-table order
 
-### Outcome-masked visual review
+### Optional qualitative visual review
 
 Create the review sheet before consulting updated case-level ranks:
 
@@ -291,17 +293,8 @@ uv run python 03_quality_control/visual_case_review.py summarize `
   --out_dir outputs/statistics/visual_review
 ```
 
-Only aggregate review counts are written. Because the review occurred during revision
-after the original study results were known, it is not described as prospectively
-blinded.
-
-## Analyses not included
-
-No code is included for manual-mask accuracy, artificial mask perturbation, AM-PM
-interval subgroups, sex-stratified analysis, or institutional-versus-LIDC performance
-comparison. These analyses are not supported by the available manual references,
-interval distribution, sample sizes, metadata, or dataset roles and must be reported as
-limitations. The code does not claim independent TotalSegmentator accuracy validation.
+Only aggregate review counts are written. Visual ratings are not used for exclusion or
+model selection.
 
 ## Reproducibility and data protection
 
@@ -316,8 +309,8 @@ SHA-256 hashes; mismatched cohorts or artifacts are rejected. Numerical reproduc
 requires restricted medical imaging data.
 
 Do not commit DICOM, NIfTI, subject metadata, features, rankings, local paths, or generated
-outputs. See `.gitignore` and `SECURITY.md`. Before release, inspect all staged files and
-repository history for protected information.
+outputs. See [`.gitignore`](.gitignore) and [`SECURITY.md`](SECURITY.md). Before release,
+inspect all staged files and repository history for protected information.
 
 ## License and citation
 
