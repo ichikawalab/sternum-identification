@@ -5,7 +5,8 @@ Reports:
   * bootstrap 95% CIs for rank-1/5/10 for each method,
   * bootstrap 95% CI for the paired difference (method A - method B),
   * exact McNemar tests with Holm correction across rank-1/5/10,
-  * CMC curve with pointwise bootstrap confidence intervals.
+  * CMC curve with pointwise bootstrap confidence intervals,
+  * a paired true-match-rank plot using the same method styles as the CMC curve.
 
 Resampling unit = query subject (see _common.py). Methods A and B are compared
 on the SAME resampled queries so the difference CI respects the pairing.
@@ -52,6 +53,17 @@ MAX_RANK = 10
 N_BOOT = 2000
 SEED = 42
 
+METHOD_A_STYLE = {
+    "color": "#C44E52",
+    "linestyle": "-",
+    "marker": "o",
+}
+METHOD_B_STYLE = {
+    "color": "#4C72B0",
+    "linestyle": "--",
+    "marker": "s",
+}
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Rank-based bootstrap CIs and paired tests.")
@@ -68,6 +80,126 @@ def align_methods(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
     if set(a["query_person"]) != set(b["query_person"]):
         raise ValueError("Methods contain different query-person sets")
     return a.merge(b, on="query_person", suffixes=("_a", "_b"), how="inner", validate="one_to_one")
+
+
+def plot_cmc(ax, ranks: np.ndarray, cmc_df: pd.DataFrame, label_a: str, label_b: str) -> None:
+    """Draw the CMC panel with method styling shared across Figure 3."""
+    for name, label, style in (
+        ("a", label_a, METHOD_A_STYLE),
+        ("b", label_b, METHOD_B_STYLE),
+    ):
+        ax.plot(
+            ranks,
+            cmc_df[f"cmc_{name}"] * 100,
+            marker=style["marker"],
+            linestyle=style["linestyle"],
+            color=style["color"],
+            linewidth=2.2,
+            markersize=5.5,
+            label=label,
+        )
+        ax.fill_between(
+            ranks,
+            cmc_df[f"cmc_{name}_lo"] * 100,
+            cmc_df[f"cmc_{name}_hi"] * 100,
+            color=style["color"],
+            alpha=0.13,
+            linewidth=0,
+        )
+    ax.set_xlabel("Rank")
+    ax.set_ylabel("Cumulative identification rate (%)")
+    ax.set_xticks(ranks)
+    ax.set_ylim(0, 100)
+    ax.tick_params(labelsize=13)
+    ax.xaxis.label.set_size(14)
+    ax.yaxis.label.set_size(14)
+    ax.grid(True, axis="y", color="#D0D0D0", linewidth=0.7, alpha=0.65)
+    ax.legend(
+        loc="lower right",
+        frameon=True,
+        fontsize=12,
+        handlelength=3.2,
+        handletextpad=0.8,
+        borderpad=0.5,
+    )
+
+
+def plot_paired_true_ranks(
+    ax,
+    merged: pd.DataFrame,
+    label_a: str,
+    label_b: str,
+    n_reference: int,
+) -> None:
+    """Draw paired query-level true-match ranks using the Figure 3 method styles."""
+    ordered = merged.sort_values(
+        ["true_rank_a", "true_rank_b", "query_person"],
+        kind="mergesort",
+        na_position="last",
+    ).reset_index(drop=True)
+    rank_a = ordered["true_rank_a"].to_numpy(dtype=float)
+    rank_b = ordered["true_rank_b"].to_numpy(dtype=float)
+    x = np.arange(1, len(ordered) + 1, dtype=float)
+    offset = 0.13
+
+    for xi, a_value, b_value in zip(x, rank_a, rank_b, strict=True):
+        if np.isfinite(a_value) and np.isfinite(b_value):
+            ax.plot(
+                [xi - offset, xi + offset],
+                [a_value, b_value],
+                color="#9A9A9A",
+                linewidth=0.55,
+                alpha=0.35,
+                zorder=1,
+            )
+    ax.scatter(
+        x - offset,
+        rank_a,
+        color=METHOD_A_STYLE["color"],
+        marker=METHOD_A_STYLE["marker"],
+        s=24,
+        label=label_a,
+        zorder=3,
+    )
+    ax.scatter(
+        x + offset,
+        rank_b,
+        color=METHOD_B_STYLE["color"],
+        marker=METHOD_B_STYLE["marker"],
+        s=24,
+        label=label_b,
+        zorder=3,
+    )
+
+    for threshold in RANK_THRESHOLDS:
+        ax.axhline(
+            threshold,
+            color="#A8A8A8",
+            linewidth=0.8,
+            linestyle=":",
+            alpha=0.75,
+            zorder=0,
+        )
+    tick_values = sorted({1, 5, 10, 100, int(n_reference)})
+    ax.set_yscale("log")
+    ax.set_ylim(0.8, n_reference * 1.2)
+    ax.set_yticks(tick_values)
+    ax.set_yticklabels([str(value) for value in tick_values])
+    ax.set_xlim(0.4, len(ordered) + 0.6)
+    ax.set_xticks([])
+    ax.set_xlabel("Queries")
+    ax.set_ylabel("True-match rank (log scale)")
+    ax.tick_params(labelsize=13)
+    ax.xaxis.label.set_size(14)
+    ax.yaxis.label.set_size(14)
+    ax.grid(False)
+    ax.legend(
+        loc="upper left",
+        frameon=True,
+        fontsize=12,
+        handletextpad=0.8,
+        borderpad=0.5,
+    )
 
 
 def main() -> None:
@@ -162,38 +294,29 @@ def main() -> None:
     save_dataframe(cmc_df, cmc_path)
 
     fig, ax = plt.subplots(figsize=(6, 6))
-    for name, label, color in (("a", args.label_a, "#C44E52"), ("b", args.label_b, "#4C72B0")):
-        ax.plot(
-            ranks,
-            cmc_df[f"cmc_{name}"] * 100,
-            marker="o",
-            color=color,
-            linewidth=2.2,
-            label=label,
-        )
-        ax.fill_between(
-            ranks,
-            cmc_df[f"cmc_{name}_lo"] * 100,
-            cmc_df[f"cmc_{name}_hi"] * 100,
-            color=color,
-            alpha=0.18,
-        )
-    ax.set_xlabel("Rank")
-    ax.set_ylabel("Cumulative identification rate (%)")
-    ax.set_xticks(ranks)
-    ax.set_ylim(0, 100)
-    ax.grid(True, alpha=0.25)
-    ax.legend(loc="lower right", frameon=True)
+    plot_cmc(ax, ranks, cmc_df, args.label_a, args.label_b)
     fig.tight_layout()
     figure_path = out_dir / "cmc_with_ci.tiff"
     save_figure(fig, figure_path)
+
+    fig, ax = plt.subplots(figsize=(7, 5.2))
+    plot_paired_true_ranks(
+        ax,
+        merged,
+        args.label_a,
+        args.label_b,
+        int(upstream["n_reference"]),
+    )
+    fig.tight_layout()
+    paired_rank_figure_path = out_dir / "paired_true_ranks.tiff"
+    save_figure(fig, paired_rank_figure_path)
 
     save_statistics_manifest(
         pipeline="sternum_rank_inference",
         script=Path(__file__).resolve(),
         out_dir=out_dir,
         inputs={"true_rank_a": path_a, "true_rank_b": path_b},
-        outputs=[summary_path, cmc_path, figure_path],
+        outputs=[summary_path, cmc_path, figure_path, paired_rank_figure_path],
         parameters={
             "label_a": args.label_a,
             "label_b": args.label_b,
@@ -203,6 +326,14 @@ def main() -> None:
             "mcnemar_multiplicity": "Holm correction across rank-1, rank-5, and rank-10",
             "confidence_intervals": "paired query-person percentile bootstrap",
             "cmc_intervals": "pointwise percentile bootstrap",
+            "figure_method_styles": {
+                "method_a": METHOD_A_STYLE,
+                "method_b": METHOD_B_STYLE,
+            },
+            "paired_true_rank_order": (
+                "ascending method A true-match rank, then method B true-match rank, "
+                "then query-person identifier"
+            ),
             "paired_alignment_scope": (
                 "query identifiers aligned directly; rank tables have no pair keys; "
                 "matching manifests verify identical locked query/reference hashes and counts"
