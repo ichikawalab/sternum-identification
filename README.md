@@ -1,5 +1,7 @@
 # Sternum CT Identification
 
+[![DOI](https://zenodo.org/badge/1304527046.svg)](https://doi.org/10.5281/zenodo.21756974)
+
 Research code for postmortem-query to antemortem-reference sternum CT identification
 using multi-view elliptic Fourier analysis (EFA), with PyRadiomics 3D shape features as
 the baseline.
