@@ -1,21 +1,13 @@
 cff-version: 1.2.0
-message: >-
-  If you use this software, please cite this repository and the associated
-  article once its bibliographic information is available.
-title: >-
-  Sternum CT Identification: Multi-view Elliptic Fourier Analysis and
-  Radiomics Matching Pipeline
+title: "Sternum CT Identification: Multi-view Elliptic Fourier Analysis and Radiomics Matching Pipeline"
+message: "If you use this software, please cite this repository."
 type: software
-version: 1.0.0
 authors:
-  - name: Ichikawa Lab
+  - given-names: "Shota"
+    family-names: "Ichikawa"
+    affiliation: "Graduate School of Medicine, Dentistry and Health Sciences, Niigata University"
+    orcid: "https://orcid.org/0000-0002-4275-1422"
 repository-code: "https://github.com/ichikawalab/sternum-identification"
-url: "https://github.com/ichikawalab/sternum-identification"
 license: MIT
-keywords:
-  - computed tomography
-  - sternum
-  - elliptic Fourier analysis
-  - radiomics
-  - forensic identification
-  - medical imaging
+version: 1.0.1
+date-released: 2026-08-02
