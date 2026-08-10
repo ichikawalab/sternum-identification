@@ -5,6 +5,7 @@ Reports:
   * bootstrap 95% CIs for rank-1/5/10 for each method,
   * bootstrap 95% CI for the paired difference (method A - method B),
   * exact McNemar tests with Holm correction across rank-1/5/10,
+  * mean and median true-match rank and rank-derived mean within-query AUC,
   * CMC curve with pointwise bootstrap confidence intervals,
   * a paired true-match-rank plot using the same method styles as the CMC curve.
 
@@ -50,7 +51,7 @@ from statsmodels.stats.multitest import multipletests
 
 RANK_THRESHOLDS = (1, 5, 10)
 MAX_RANK = 10
-N_BOOT = 2000
+N_BOOT = 10000
 SEED = 42
 
 METHOD_A_STYLE = {
@@ -275,6 +276,29 @@ def main() -> None:
     summary_path = out_dir / "rank_ci_mcnemar.csv"
     save_dataframe(summary, summary_path)
 
+    n_reference = int(upstream["n_reference"])
+    distribution_rows: list[dict] = []
+    for method_key, label, true_ranks in (
+        ("a", args.label_a, tr_a),
+        ("b", args.label_b, tr_b),
+    ):
+        rank_derived_auc = (n_reference - true_ranks) / (n_reference - 1)
+        distribution_rows.append(
+            {
+                "method_key": method_key,
+                "method": label,
+                "n_query": n,
+                "n_reference": n_reference,
+                "mean_true_rank": float(np.nanmean(true_ranks)),
+                "median_true_rank": float(np.nanmedian(true_ranks)),
+                "mean_rank_derived_auc": float(np.nanmean(rank_derived_auc)),
+                "rank_derived_auc_formula": "(n_reference - true_rank) / (n_reference - 1)",
+            }
+        )
+    distribution_summary = pd.DataFrame(distribution_rows)
+    distribution_summary_path = out_dir / "rank_distribution_summary.csv"
+    save_dataframe(distribution_summary, distribution_summary_path)
+
     ranks = np.arange(1, MAX_RANK + 1)
     cmc_a = cmc_curve(tr_a, MAX_RANK)
     cmc_b = cmc_curve(tr_b, MAX_RANK)
@@ -316,7 +340,13 @@ def main() -> None:
         script=Path(__file__).resolve(),
         out_dir=out_dir,
         inputs={"true_rank_a": path_a, "true_rank_b": path_b},
-        outputs=[summary_path, cmc_path, figure_path, paired_rank_figure_path],
+        outputs=[
+            summary_path,
+            distribution_summary_path,
+            cmc_path,
+            figure_path,
+            paired_rank_figure_path,
+        ],
         parameters={
             "label_a": args.label_a,
             "label_b": args.label_b,
@@ -326,6 +356,10 @@ def main() -> None:
             "mcnemar_multiplicity": "Holm correction across rank-1, rank-5, and rank-10",
             "confidence_intervals": "paired query-person percentile bootstrap",
             "cmc_intervals": "pointwise percentile bootstrap",
+            "rank_derived_auc": (
+                "descriptive only; computed as (n_reference - true_rank) / "
+                "(n_reference - 1) and not treated as an independent endpoint"
+            ),
             "figure_method_styles": {
                 "method_a": METHOD_A_STYLE,
                 "method_b": METHOD_B_STYLE,

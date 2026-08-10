@@ -1,5 +1,12 @@
 """
-Query-macro discrimination inference with query-subject bootstrap.
+LEGACY ANALYSIS — query-macro discrimination inference with query-subject bootstrap.
+
+This script is retained for provenance of an earlier exploratory analysis. AUC
+inference is not reported in the final manuscript because, with one genuine
+reference per query and a fixed reference-database size, within-query AUC is a
+fixed transformation of the true-match rank. This script is therefore not part
+of the final inferential workflow. Final-manuscript mean AUC values are generated
+as rank-derived summaries by ``rank_inference.py``.
 
 Reports:
   * mean within-query ROC AUC per method,

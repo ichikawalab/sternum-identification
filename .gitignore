@@ -14,6 +14,11 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *~
+tmp/
+
+# Local manuscript revision files
+Revision1/
+Revision2/
 
 # Restricted inputs and generated analysis products
 data/

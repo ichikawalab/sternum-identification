@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "Sternum CT Identification: Multi-view Elliptic Fourier Analysis and Radiomics Matching Pipeline"
+title: "Sternum CT Identification: Multi-view Elliptic Fourier Analysis and Radiomics Candidate-Ranking Pipeline"
 message: "If you use this software, please cite this repository."
 type: software
 authors:
@@ -9,6 +9,5 @@ authors:
     orcid: "https://orcid.org/0000-0002-4275-1422"
 repository-code: "https://github.com/ichikawalab/sternum-identification"
 license: MIT
-version: 1.0.1
-doi: "10.5281/zenodo.21756974"
-date-released: 2026-08-02
+version: 1.0.2
+date-released: 2026-08-10

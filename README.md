@@ -1,7 +1,5 @@
 # Sternum CT Identification
 
-[![DOI](https://zenodo.org/badge/1304527046.svg)](https://doi.org/10.5281/zenodo.21756974)
-
 Research code for postmortem-query to antemortem-reference sternum CT identification
 using multi-view elliptic Fourier analysis (EFA), with PyRadiomics 3D shape features as
 the baseline.
@@ -18,8 +16,8 @@ Patient images, masks, metadata, features, and results are not included.
 01_preprocessing/          DICOM conversion and TotalSegmentator segmentation
 02_feature_extraction/     Radiomics and EFA features
 03_quality_control/        Mahalanobis QC, cohort locking, and visual review
-04_matching/               Radiomics and cross-fitted EFA matching
-05_statistics/             Paired rank and AUC inference
+04_matching/               Radiomics and cross-fitted EFA candidate ranking
+05_statistics/             Paired rank inference and descriptive analyses
 common/                    Shared validation and metrics
 environments/              Locked segmentation and PyRadiomics environments
 tests/                     Synthetic tests
@@ -237,24 +235,18 @@ uv run python 05_statistics/rank_inference.py `
   --true_rank_b outputs/matching/primary/radiomics/true_rank.csv `
   --label_b "Radiomics" `
   --out_dir outputs/statistics/rank_efa_vs_radiomics
-
-uv run python 05_statistics/auc_inference.py `
-  --pairs_a outputs/matching/primary/efa_crossfit/crossfit_pair_scores.csv `
-  --label_a "Cross-fitted EFA" `
-  --pairs_b outputs/matching/primary/radiomics/pair_scores.csv `
-  --label_b "Radiomics" `
-  --out_dir outputs/statistics/auc_efa_vs_radiomics
 ```
 
-Rank-1 is primary; Rank-5 and Rank-10 are secondary. The fixed analysis uses 2,000 paired
+Rank-1 is primary; Rank-5 and Rank-10 are secondary. The fixed analysis uses 10,000 paired
 query-person bootstrap samples with seed 42, exact McNemar tests, and Holm correction
 across the three rank thresholds. CMC intervals are pointwise.
 
-AUC is an exploratory mean within-query summary with a paired 100,000-draw sign-flip
-test. With one genuine reference per query and a fixed gallery size, within-query AUC is
-an affine transformation of genuine mid-rank; it is not independent verification
-evidence. Inference conditions on the realized cohort, fixed gallery, QC fit, and
-cross-fitting procedure.
+With one genuine reference per query and a fixed gallery size, within-query AUC is a
+transformation of true-match rank. `rank_inference.py` therefore reports mean and median
+true-match ranks and rank-derived mean AUC without separate AUC inference.
+
+> **Legacy:** `05_statistics/auc_inference.py` is retained for provenance and is not part
+> of the current workflow.
 
 ## Locked sensitivity analyses
 
@@ -297,6 +289,36 @@ uv run python 03_quality_control/visual_case_review.py summarize `
 
 Only aggregate review counts are written. Visual ratings are not used for exclusion or
 model selection.
+
+## Runtime benchmark
+
+Benchmark TotalSegmentator runtime for the primary postmortem queries:
+
+```powershell
+uv run --project environments/env-seg python `
+  01_preprocessing/benchmark_segmentation_runtime.py `
+  --query_csv outputs/cohorts/primary/query.csv `
+  --segmentation_csv outputs/segmentation/segmentation_results.csv `
+  --out_dir outputs/statistics/runtime_benchmark/segmentation `
+  --device auto
+```
+
+Benchmark mask preprocessing and pose normalization, H=20 three-view EFD extraction, and
+candidate ranking against the primary gallery:
+
+```powershell
+uv run python 05_statistics/runtime_benchmark.py `
+  --query_csv outputs/cohorts/primary/query.csv `
+  --reference_csv outputs/cohorts/primary/reference_gallery.csv `
+  --segmentation_csv outputs/segmentation/segmentation_results.csv `
+  --features_csv outputs/features/efa/efa_features_area_normalized.csv `
+  --segmentation_runtime_csv outputs/statistics/runtime_benchmark/segmentation/segmentation_runtime.csv `
+  --out_dir outputs/statistics/runtime_benchmark/query_pipeline
+```
+
+The benchmark excludes DICOM conversion, CSV loading, and cross-fitted configuration
+selection. Ranking uses 100 timed repetitions per query after five warm-ups. Stage-specific
+medians and interquartile ranges are written to `runtime_summary.csv`.
 
 ## Reproducibility and data protection
 
