@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "Sternum CT Identification: Multi-view Elliptic Fourier Analysis and Radiomics Candidate-Ranking Pipeline"
+message: "If you use this software, please cite this repository."
+type: software
+authors:
+  - given-names: "Shota"
+    family-names: "Ichikawa"
+    affiliation: "Graduate School of Medicine, Dentistry and Health Sciences, Niigata University"
+    orcid: "https://orcid.org/0000-0002-4275-1422"
+repository-code: "https://github.com/ichikawalab/sternum-identification"
+license: MIT
+version: 1.0.3
+doi: "10.5281/zenodo.21871008"
+date-released: 2026-08-17

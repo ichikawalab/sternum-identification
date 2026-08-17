@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.16"
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install ${{ matrix.python }}
+      - name: Install locked dependencies
+        run: uv sync --frozen --group dev --python ${{ matrix.python }}
+      - name: Lint
+        run: uv run ruff check .
+      - name: Format
+        run: uv run ruff format --check .
+      - name: Test
+        run: uv run pytest -q
+
+  radiomics-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.16"
+          enable-cache: true
+      - run: uv python install 3.9
+      - name: Install frozen PyRadiomics environment
+        run: uv sync --frozen --project environments/env-radiomics --python 3.9
+      - name: Import the public extraction CLI
+        run: >-
+          uv run --project environments/env-radiomics python
+          02_feature_extraction/radiomics/extract_shape_features.py --help
+      - name: Test synthetic PyRadiomics extraction
+        run: >-
+          uv run --project environments/env-radiomics python -m unittest
+          discover -s tests_radiomics -v
+
+  lock-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.16"
+      - name: Validate segmentation lock without downloading CUDA wheels
+        run: uv lock --check --project environments/env-seg
