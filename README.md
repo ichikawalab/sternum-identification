@@ -1,6 +1,6 @@
 # Sternum CT Identification
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21871008.svg)](https://doi.org/10.5281/zenodo.21871008)
+[![DOI](https://zenodo.org/badge/1304527046.svg)](https://doi.org/10.5281/zenodo.21756974)
 
 Research code for sternum-based postmortem-to-antemortem CT candidate ranking using
 multi-view elliptic Fourier analysis (EFA), with radiomic shape features as a baseline.
